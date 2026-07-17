@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🎮 AlphaZero Breakthrough 5x5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        #board-container {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .board {
+            border-collapse: collapse;
+            border: 4px solid #667eea;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .cell {
+            width: 70px;
+            height: 70px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 32px;
+            font-weight: bold;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            z-index: 10;
+        }
+
+        .cell.white {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            color: #333;
+        }
+
+        .cell.black {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ecf0f1;
+        }
+
+        .cell.empty {
+            background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+            color: #9fa8da;
+        }
+
+        .cell.selected {
+            animation: pulse 0.6s infinite;
+            box-shadow: 0 0 25px rgba(76, 175, 80, 0.8) !important;
+            border: 3px solid #4caf50 !important;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .debug {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            padding: 12px;
+            margin: 15px 0;
+            background: #263238;
+            color: #4caf50;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            overflow-x: auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .cell {
+                width: 55px;
+                height: 55px;
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 AlphaZero Breakthrough</h1>
+        <p class="subtitle">Powered by Neural Networks & MCTS</p>
+
+        <div class="instructions">
+            <h3>📖 Règles du Jeu</h3>
+            <ul>
+                <li><strong>BLANC (W)</strong> : Vous jouez en lignes 3-4 → Objectif: ligne 0</li>
+                <li><strong>NOIR (B)</strong> : IA joue en lignes 0-1 → Objectif: ligne 4</li>
+                <li><strong>Déplacements</strong> : Avant (vide) | Diagonales (vide ou capture)</li>
+                <li><strong>Victoire</strong> : Premier qui atteint la ligne adverse gagne!</li>
+            </ul>
+        </div>
+
+        <div id="board-container">
+            {{ board_html|safe }}
+        </div>
+
+        <div id="status" class="status">{{ status }}</div>
+        <div id="debug" class="debug">🚀 Système prêt | Cliquez sur un pion BLANC pour jouer</div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Tour #</div>
+                <div class="stat-value" id="move-count">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Joueur</div>
+                <div class="stat-value" id="current-player">BLANC</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="newGame()">🔄 Nouvelle Partie</button>
+            <button onclick="showHelp()">❓ Aide</button>
+            <button onclick="showStats()">📊 Statistiques</button>
+        </div>
+    </div>
+
+    <script>
+        let gameId = 'default';
+        let selectedPiece = null;
+        let moveCount = 0;
+
+        // ========== GESTION DES CLICS ==========
+        document.addEventListener('click', async function(e) {
+            const cell = e.target.closest('td.cell');
+            if (!cell) return;
+
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            const content = cell.textContent.trim();
+
+            // Vérifie que c'est un pion blanc
+            if (content !== 'W') {
+                updateDebug('❌ Cliquez sur un pion BLANC (W)');
+                return;
+            }
+
+            // Désélectionne l'ancien pion
+            if (selectedPiece && selectedPiece !== cell) {
+                selectedPiece.classList.remove('selected');
+            }
+
+            // Sélectionne le nouveau pion
+            selectedPiece = cell;
+            selectedPiece.classList.add('selected');
+
+            // Trouve une action légale pour ce pion
+            const action = findBestActionForPiece(x, y);
+
+            if (action === null) {
+                updateDebug(`❌ Pion (${x},${y}) bloqué - aucun coup légal`);
+                return;
+            }
+
+            updateDebug(`✅ Pion (${x},${y}) → Action ${action}`);
+            await makeMove(action);
+        });
+
+        // ========== TROUVE ACTION POUR UN PION ==========
+        function findBestActionForPiece(x, y) {
+            const dirs = [
+                [-1, -1],  // Diagonal gauche (d=0)
+                [-1, 0],   // Avant (d=1)
+                [-1, 1]    // Diagonal droite (d=2)
+            ];
+
+            const board = getBoardState();
+
+            for (let d = 0; d < 3; d++) {
+                const [dx, dy] = dirs[d];
+                const nx = x + dx;
+                const ny = y + dy;
+
+                // Vérifie limites
+                if (nx < 0 || nx >= 5 || ny < 0 || ny >= 5) continue;
+
+                const target = board[nx][ny];
+
+                // Règles: Avant=vide, Diagonales=vide ou ennemi
+                if (d === 1) {  // Avant
+                    if (target === 0) {
+                        return 3 * (5 * x + y) + d;
+                    }
+                } else {  // Diagonales
+                    if (target === 0 || target === -1) {
+                        return 3 * (5 * x + y) + d;
+                    }
+                }
+            }
+
+            return null;  // Aucun coup légal
+        }
+
+        // ========== RÉCUPÈRE L'ÉTAT DU PLATEAU ==========
+        function getBoardState() {
+            const board = Array(5).fill().map(() => Array(5).fill(0));
+            const cells = document.querySelectorAll('td.cell');
+
+            cells.forEach(cell => {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                const content = cell.textContent.trim();
+
+                if (content === 'W') board[x][y] = 1;
+                else if (content === 'B') board[x][y] = -1;
+                else board[x][y] = 0;
+            });
+
+            return board;
+        }
+
+        // ========== EXÉCUTE UN COUP ==========
+        async function makeMove(action) {
+            try {
+                updateDebug('📡 Envoi du coup au serveur...');
+
+                const response = await fetch('/api/move', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: action,
+                        game_id: gameId
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erreur serveur');
+                }
+
+                const data = await response.json();
+
+                // Mise à jour de l'interface
+                document.getElementById('board-container').innerHTML = data.board_html;
+                document.getElementById('status').textContent = data.status;
+
+                // Désélectionne le pion
+                if (selectedPiece) {
+                    selectedPiece.classList.remove('selected');
+                    selectedPiece = null;
+                }
+
+                // Stats
+                moveCount++;
+                document.getElementById('move-count').textContent = moveCount;
+                document.getElementById('current-player').textContent = 
+                    data.current_player === 1 ? 'BLANC' : 'NOIR';
+
+                // Debug
+                if (data.error) {
+                    updateDebug(`❌ ${data.error}`);
+                } else if (data.ai_move !== null) {
+                    updateDebug(`✅ Vous: ${action} | IA: ${data.ai_move}`);
+                } else {
+                    updateDebug(`✅ Coup ${action} joué`);
+                }
+
+                // Fin de partie
+                if (data.done && data.winner) {
+                    setTimeout(() => {
+                        alert(`🎉 ${data.winner.toUpperCase()} GAGNE LA PARTIE!`);
+                    }, 500);
+                }
+
+            } catch (error) {
+                updateDebug(`❌ Erreur: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // ========== NOUVELLE PARTIE ==========
+        async function newGame() {
+            try {
+                updateDebug('🔄 Démarrage nouvelle partie...');
+
+                const response = await fetch('/api/new_game');
+                const data = await response.json();
+
+                gameId = data.game_id;
+                moveCount = 0;
+
+                document.getElementById('board-container').innerHTML = data.board_html;
+                document.getElementById('status').textContent = data.status;
+                document.getElementById('move-count').textContent = '0';
+                document.getElementById('current-player').textContent = 'BLANC';
+
+                selectedPiece = null;
+                updateDebug('✅ Nouvelle partie démarrée! À vous de jouer');
+
+            } catch (error) {
+                updateDebug(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        // ========== AIDE ==========
+        function showHelp() {
+            alert(`🎮 AIDE BREAKTHROUGH 5x5
+
+📌 OBJECTIF:
+• BLANC: Atteindre la ligne 0 (haut)
+• NOIR: Atteindre la ligne 4 (bas)
+
+🎯 DÉPLACEMENTS:
+• AVANT: Case vide uniquement
+• DIAGONALES: Case vide OU capture ennemie
+
+💡 STRATÉGIE:
+• Avancez prudemment
+• Protégez vos pions
+• Créez des menaces multiples
+• L'IA utilise MCTS + réseau neuronal!
+
+Code action = 3 * (5*x + y) + direction
+où direction: 0=↙, 1=↑, 2=↗`);
+        }
+
+        // ========== STATISTIQUES ==========
+        async function showStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                alert(`📊 STATISTIQUES SYSTÈME
+
+🔥 Device: ${data.device}
+🎯 MCTS Simulations: ${data.num_simulations}
+🧠 Paramètres réseau: ${data.network_params.toLocaleString()}
+🎮 Parties actives: ${data.active_games}
+
+L'IA utilise AlphaZero avec:
+• Réseau convolutif profond
+• Monte Carlo Tree Search
+• Self-play training`);
+
+            } catch (error) {
+                alert('❌ Erreur lors du chargement des stats');
+            }
+        }
+
+        // ========== UTILITAIRES ==========
+        function updateDebug(message) {
+            const debugEl = document.getElementById('debug');
+            const timestamp = new Date().toLocaleTimeString();
+            debugEl.textContent = `[${timestamp}] ${message}`;
+        }
+
+        // ========== INITIALISATION ==========
+        window.onload = function() {
+            updateDebug('✅ Système chargé | Cliquez sur un pion BLANC');
+        };
+    </script>
+</body>
+</html>
